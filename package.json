@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "ai": "^4.3.10",
     "chromadb": "^2.3.0",
     "next": "15.3.1",
     "openai": "^4.96.1",
