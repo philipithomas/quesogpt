@@ -1,4 +1,12 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+
+# QuesoGPT
+
+This is QuesoGPT, a way to talk to my dog Queso. He is a dog, so he can't respond with text - instead he responds with images. Try asking "what did you do today", "what do you do when you're scared", or "do you remember moving?"
+
+### Technical Details
+
+QuesoGPT was quickly developed for Chroma x Jam Vibe Coding Night in San Francisco on April 29, 2024. It was built using OpenAI Codex, mostly with a single prompt. It uses [Chroma](https://trychroma.com) for vector storage and retrieval, specifically leveraging Chroma Cloud. The application uses a retrieval-augmented generation (RAG) approach, potentially incorporating techniques like reranking to improve the relevance of the images retrieved based on the user's query.
 
 ## Getting Started
 
@@ -6,31 +14,51 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Original prompt
 
-## Learn More
+```
+We’re making a chat app.
 
-To learn more about Next.js, take a look at the following resources:
+This is an empty nex.tjs repo with a .env file with credentials for Chromadb and OpenAI, and I’ve already installed chromadb package and openai package and vercel ai package (read package.json)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+How to work with ChromaDB:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+import { ChromaClient } from "chromadb";
+const client = new ChromaClient({
+  path: "https://api.trychroma.com:8000",
+  auth: { provider: "token", credentials: ‘put your api key here, tokenHeaderType: "X_CHROMA_TOKEN" },
+  tenant: ‘tenant id here’,
+  database: ‘database name here’
+});
 
-## Deploy on Vercel
+const collection = await client.getOrCreateCollection({ name: “queso” });
+await collection.add({
+  ids: ["1", "2", "3"],
+  documents: ["apple", "oranges", "pineapple"],
+});
+console.log(await collection.query({ queryTexts: "hawaii", nResults: 1 }));
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Your task has two parts:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Data ingestion
+
+I want to be able to run `npm run memorize` and it will go through each photo in public/queso/ (all jpegs from 1.jpeg, 2.jpeg, …, 46.jpeg) and do the following in a script for every image:
+1. Use OpenAI o3 model, pass the image in and ask OpenAI to generate a caption like this: “Describe what’s happening in the photo from the perspective of the white dog, ascribing detailed emotions and a story to the photo, like ‘hiding scared under the couch’ or ‘having a happy walk in the Washington Square park in the Fall leaves’ or ‘playing with my friend, a golden-doodle who’s bigger than me’”
+2. Add that caption to chromadb using the environment variables from the .env file. The ID should be the file name and the document should be file name.Ensure that it iterates through all images in that folder every time.
+
+# Querying
+
+I want you to build a simple chatbot, like ChatGPT, using the OpenAI SDK and this chromadb data. But, instead of the system responding with text - it responds with images. The system is pretending to be a dog, and responds with images that we stored in data ingestion. The chat functionality should be the homepage of the app.Here’s how it works.1. It’s a simple chat interface, all in memory. (No sidebar or anything)2. When User sends a message, the system responds by having access to chromadb as a tool. It searches Chroma using collection.query to find 10 matching images, then in a light “Reranking” the llm approach (using O4-mini model) responds to the user message with a photo. IT should be intstructed to not send photos that have already been sent in the same chat. So, if the user asks “what’s your favorite time of year”, it might respond with a photo from Fall.
+3. User can ask follow-up questions to continue the chat in-memory
+
+# Testing
+
+Ensure `npm run build` succeeds and fix any issues if it does not.
+
+
+```
