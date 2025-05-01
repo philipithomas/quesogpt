@@ -4,7 +4,11 @@ This is QuesoGPT, a way to talk to my dog Queso. He is a dog, so he can't respon
 
 ### Technical Details
 
-I developed QuesoGPT forthe  Chroma x Jam Vibe Coding Night in San Francisco on April 29, 2024. It was built using OpenAI Codex, mostly with a single prompt. It uses [Chroma](https://trychroma.com) for vector storage and retrieval, specifically leveraging Chroma Cloud. The application uses a retrieval-augmented generation (RAG) approach, potentially incorporating techniques like reranking to improve the relevance of the images retrieved based on the user's query.
+I developed QuesoGPT forthe  Chroma x Jam Vibe Coding Night in San Francisco on April 29, 2024. 
+
+**[🎥 Watch the video on YouTube](https://www.youtube.com/watch?v=-3muonMwiqY)**
+
+It was built using OpenAI Codex, mostly with a single prompt. It uses [Chroma](https://trychroma.com) for vector storage and retrieval, specifically leveraging Chroma Cloud. The application uses a retrieval-augmented generation (RAG) approach, potentially incorporating techniques like reranking to improve the relevance of the images retrieved based on the user's query.
 
 ## Environment Variables
 
