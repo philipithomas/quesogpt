@@ -5,7 +5,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const buildIdPath = path.join(process.cwd(), '.next', 'BUILD_ID');
+const cwd = process.cwd();
+const buildIdPath = path.join(cwd, '.next', 'BUILD_ID');
+const sourceDirs = [
+  path.join(cwd, 'app'),
+  path.join(cwd, 'pages'),
+  path.join(cwd, 'src', 'app'),
+  path.join(cwd, 'src', 'pages'),
+];
 
 function run(command, args) {
   return spawnSync(command, args, {
@@ -15,6 +22,16 @@ function run(command, args) {
 }
 
 if (!fs.existsSync(buildIdPath)) {
+  const hasSource = sourceDirs.some((dir) => fs.existsSync(dir));
+
+  if (!hasSource) {
+    console.error(
+      'No production build found at .next/BUILD_ID and no source directory detected.\n' +
+      'Rebuild the Docker image or run `npm run build` in an environment with the source code before starting.',
+    );
+    process.exit(1);
+  }
+
   const npmExec = process.env.npm_execpath || 'npm';
   console.warn('No production build detected. Running `npm run build`...');
   const buildResult = run(npmExec, ['run', 'build']);
