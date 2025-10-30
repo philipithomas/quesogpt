@@ -23,5 +23,6 @@ RUN npm prune --omit=dev
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/scripts ./scripts
+CMD npm run build
 EXPOSE 3000
 CMD ["npm","run","start"]
