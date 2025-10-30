@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { getChromaClient } from '@/lib/chroma';
+import { getOrCreateCollection } from '@/lib/chroma';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -13,8 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Query Chroma for the 10 most relevant captions.
-    const chroma = getChromaClient();
-    const collection = await chroma.getOrCreateCollection({ name: 'queso' });
+    const collection = await getOrCreateCollection('queso');
 
     const results = await collection.query({
       queryTexts: [message],

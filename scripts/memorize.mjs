@@ -5,7 +5,7 @@
  * Usage: `npm run memorize`
  *
  * - Iterates through all JPEG images in `public/queso/`.
- * - For each image we call the OpenAI ChatCompletion (GPT-4o Mini) with the
+ * - For each image we call the OpenAI ChatCompletion (GPT-5) with the
  *   vision capability to create a rich caption **from the perspective of the
  *   white dog**.
  * - Each caption is stored in a ChromaDB collection whose connection details
@@ -29,6 +29,7 @@ import 'dotenv/config';
 
 import OpenAI from 'openai';
 import { ChromaClient } from 'chromadb';
+import { OpenAIEmbeddingFunction } from '@chroma-core/openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -52,6 +53,11 @@ const chromaClient = new ChromaClient({
   database: requireEnv('CHROMA_DATABASE'),
 });
 
+const embeddingFunction = new OpenAIEmbeddingFunction({
+  apiKey: requireEnv('OPENAI_API_KEY'),
+  modelName: 'text-embedding-3-small',
+});
+
 // Resolve path to the `public/queso` directory irrespective of where the
 // script is executed from.
 const PROJECT_ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -69,7 +75,7 @@ async function main() {
 
   console.log(`Found ${images.length} images…`);
 
-  const collection = await chromaClient.getOrCreateCollection({ name: 'queso' });
+  const collection = await getOrCreateCollection('queso');
 
   for (const fileName of images) {
     try {
@@ -90,8 +96,7 @@ async function main() {
         "Describe what's happening in the photo from the perspective of the white dog. Ascribe detailed emotions and a short story to the photo. Keep it short - one or two sentences.";
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        max_tokens: 120,
+        model: 'gpt-5',
         messages: [
           {
             role: 'user',
@@ -127,6 +132,27 @@ async function main() {
   }
 
   console.log('✨ Done.');
+}
+
+async function getOrCreateCollection(name) {
+  try {
+    return await chromaClient.getCollection({ name, embeddingFunction });
+  } catch {
+    try {
+      return await chromaClient.createCollection({ name, embeddingFunction });
+    } catch (createErr) {
+      const message =
+        createErr && typeof createErr === 'object' && 'message' in createErr
+          ? String(createErr.message ?? '')
+          : '';
+
+      if (message.toLowerCase().includes('already') && message.toLowerCase().includes('exist')) {
+        return chromaClient.getCollection({ name, embeddingFunction });
+      }
+
+      throw createErr;
+    }
+  }
 }
 
 main();
