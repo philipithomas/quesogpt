@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getChromaClient } from '@/lib/chroma';
-import { IncludeEnum } from 'chromadb';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -20,37 +19,29 @@ export async function POST(req: NextRequest) {
     const results = await collection.query({
       queryTexts: [message],
       nResults: 10,
-      include: [IncludeEnum.Documents],
+      include: ['documents'],
     });
 
     // Flatten results and handle potential nulls
-    const initialIds: string[] = results.ids?.[0]?.filter(Boolean) as string[] || [];
-    const initialDocs: string[] = results.documents?.[0]?.filter(Boolean) as string[] || [];
-
-    if (initialIds.length !== initialDocs.length) {
-      console.error("Chroma query returned mismatched ids and documents count");
-      return NextResponse.json({ error: 'Internal server error during query' }, { status: 500 });
-    }
-
-    // Create a map of ID -> caption (document) for the initial results
     const initialIdToCaptionMap = new Map<string, string>();
-    initialIds.forEach((id, index) => {
-      initialIdToCaptionMap.set(id, initialDocs[index]);
-    });
-
-    // Filter down to IDs not yet used in the chat, preserving the caption mapping
     const unseenIdToCaptionMap = new Map<string, string>();
-    initialIds.forEach(id => {
-      if (!usedIds.includes(id) && initialIdToCaptionMap.has(id)) {
-        unseenIdToCaptionMap.set(id, initialIdToCaptionMap.get(id)!);
+
+    for (const row of results.rows()[0] ?? []) {
+      const document = typeof row.document === 'string' ? row.document.trim() : '';
+      if (!document) continue;
+
+      initialIdToCaptionMap.set(row.id, document);
+
+      if (!usedIds.includes(row.id)) {
+        unseenIdToCaptionMap.set(row.id, document);
       }
-    });
+    }
 
     const unseenIds = Array.from(unseenIdToCaptionMap.keys());
 
     if (unseenIds.length === 0) {
       // Check if there were candidates initially but all were used
-      if (initialIds.length > 0) {
+      if (initialIdToCaptionMap.size > 0) {
         // You could send a specific message here, e.g., "I've shown you all relevant memories for that."
         // For now, just return a generic "not found" to match previous logic.
         return NextResponse.json({ error: 'No new images found for this query' }, { status: 404 });
@@ -94,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ id: selectedId, caption: selectedCaption }); // Use selectedCaption
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Chat route error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
