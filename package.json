@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "node scripts/next-build-wrapper.js",
     "memorize": "node scripts/memorize.mjs",
-    "start": "next start",
+    "start": "node scripts/start.js",
     "lint": "next lint"
   },
   "dependencies": {
